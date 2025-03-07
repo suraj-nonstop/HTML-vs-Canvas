@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D3.js 5000 Nodes</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    svg {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+  <svg width="1000" height="600"></svg>
+
+  <script>
+    const width = 1000;
+    const height = 600;
+
+    // Generate 5000 random data points
+    const nodes = d3.range(5000).map(() => ({
+      x: Math.random() * width,
+      y: Math.random() * height
+    }));
+
+    // Select the SVG and bind data
+    const svg = d3.select('svg');
+
+    svg.selectAll('circle')
+      .data(nodes)
+      .join('circle')
+      .attr('cx', d => d.x)
+      .attr('cy', d => d.y)
+      .attr('r', 3)
+      .attr('fill', 'steelblue');
+  </script>
+</body>
+</html>

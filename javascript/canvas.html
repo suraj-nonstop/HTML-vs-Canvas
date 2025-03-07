@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Render nodes on Canvas  </title>
+</head>
+<body>
+ 
+  <h1>Render 5000 nodes on Canvas </h1>
+  <canvas id="canvasId"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script>
+    const width = 12000;
+    const height = 1200;
+
+    const canvas = document.getElementById('canvasId');
+    canvas.width = width;
+    canvas.height = height;
+    // d3 init the canvas element with a context
+    const context = canvas.getContext('2d');
+
+    const radius = 20;
+    const circleData = d3.range(50000).map(() => ({
+      x: Math.random() * (width - radius * 2) + radius,
+      y: Math.random() * (height - radius * 2) + radius
+    }));
+
+    function drawCircles() {
+      context.clearRect(0, 0, width, height);
+      circleData.forEach(d => {
+        context.beginPath();
+        context.rect(d.x, d.y, 40, 40);
+        context.fillStyle = 'white';
+        context.fill();
+        context.stroke();
+      });
+    }
+
+    let draggedCircle = null;
+
+    canvas.addEventListener('mousedown', (event) => {
+      const [x, y] = [event.offsetX, event.offsetY];
+      draggedCircle = circleData.find(d => Math.hypot(d.x - x, d.y - y) < radius);
+    });
+
+    canvas.addEventListener('mousemove', (event) => {
+      if (draggedCircle) {
+        draggedCircle.x = event.offsetX;
+        draggedCircle.y = event.offsetY;
+        drawCircles();
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      draggedCircle = null;
+    });
+
+    drawCircles();
+  </script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Render nodes on HTML  </title>
+    <style>
+        body {
+            width: 10000px;
+            height: 10000px;
+        }
+      
+    </style>
+</head>
+<body>
+  <h1>Render 5000 nodes on HTML </h1>
+    <script >
+      for (let i = 0; i < 5000; i++) {
+  const div = document.createElement('div');
+  div.id = `draggable-${i}`;
+  div.className = 'draggable';
+  div.style.width = '50px';
+  div.style.height = '50px';
+  div.style.backgroundColor = 'lightblue';
+  div.style.position = 'absolute';
+
+  // get full width of body 
+  // get full height of body
+
+
+  div.style.left = `${Math.random() * document.body.scrollWidth}px`;
+  div.style.top = `${Math.random() * document.body.scrollHeight}px`;
+  div.style.cursor = 'move';
+  document.body.appendChild(div);
+}
+
+// Variables to store the offset of the mouse during the drag
+let offsetX, offsetY, isDragging = false, currentDraggable = null;
+
+// When the mouse is pressed down on the element
+document.addEventListener('mousedown', (event) => {
+  if (event.target.classList.contains('draggable')) {
+    currentDraggable = event.target;
+    // Calculate the offset between the mouse and the top-left corner of the element
+    offsetX = event.clientX - currentDraggable.offsetLeft;
+    offsetY = event.clientY - currentDraggable.offsetTop;
+    // Set isDragging to true to indicate that dragging has started
+    isDragging = true;
+    // Change the cursor to indicate dragging
+    currentDraggable.style.cursor = 'grabbing';
+  }
+});
+
+// When the mouse is moved
+document.addEventListener('mousemove', (event) => {
+  if (isDragging && currentDraggable) {
+    // Update the position of the element as the mouse moves
+    currentDraggable.style.left = event.clientX - offsetX + 'px';
+    currentDraggable.style.top = event.clientY - offsetY + 'px';
+  }
+});
+
+// When the mouse is released
+document.addEventListener('mouseup', () => {
+  if (currentDraggable) {
+    // Stop dragging when the mouse is released
+    isDragging = false;
+    currentDraggable.style.cursor = 'move'; // Reset the cursor back to move
+    currentDraggable = null;
+  }
+});
+    </script>
+</body>
+</html>

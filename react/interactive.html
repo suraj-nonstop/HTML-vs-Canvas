@@ -36,7 +36,7 @@
       const [selectedNode , setSelectedNode] = React.useState(null);
       for (let i = 0; i < 5000; i++) {
         data.individuals[i] = { 
-          "iconText":i % 2 === 0 ? "sM" : "F",
+          "iconText": "N-"+i,
           "sex": i % 2 === 0 ? 0 : 1,
           "x": Math.random() * 2000,
           "y": Math.random() * 2000

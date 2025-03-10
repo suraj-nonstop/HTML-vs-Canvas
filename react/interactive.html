@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Render 50000 Nodes</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    .popup {
+      position: absolute;
+      background-color: white;
+      border: 1px solid #ccc;
+      padding: 10px;
+      display: none;
+    }
+    .hiddenCanvas {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const App = () => {
+      // read the data from the server
+     
+      const [data, setData] = React.useState({
+        "lines": [],
+        "individuals": {}
+      });
+      const [selectedNode , setSelectedNode] = React.useState(null);
+      for (let i = 0; i < 5000; i++) {
+        data.individuals[i] = { 
+          "iconText":i % 2 === 0 ? "sM" : "F",
+          "sex": i % 2 === 0 ? 0 : 1,
+          "x": Math.random() * 2000,
+          "y": Math.random() * 2000
+        };
+      }
+
+      return (
+            <div style={{ display: "flex" }}>
+            {selectedNode && selectedNode != null ? (
+              <div>
+              <div>{selectedNode.iconText}</div>
+              </div>
+            ) : ""}
+            <PedigreeChart data={data} />
+            </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+      const customBase = document.createElement("custom");
+        const custom = d3.select(customBase);
+      
+
+
+
+        
+    class PedigreeChart extends React.Component {
+
+
+      constructor(props) {
+        super(props);
+        this.mainCanvasRef = React.createRef();
+        this.hiddenCanvasRef = React.createRef();
+        this.colourToNode = {};
+        this.nextCol = 1;
+        this.data = props.data;
+        this.onNodeSelect = props.onNodeSelect;
+      }
+
+      componentDidMount() {
+        this.drawChart();
+      }
+
+      genColor() {
+        let ret = [];
+        if (this.nextCol < 16777215) {
+          ret.push(this.nextCol & 0xff); // Red
+          ret.push((this.nextCol & 0xff00) >> 8); // Green
+          ret.push((this.nextCol & 0xff0000) >> 16); // Blue
+          this.nextCol += 1;
+        }
+        return "rgb(" + ret.join(",") + ")";
+      }
+
+      drawChart() {
+        this.bindData();
+        this.draw(this.mainCanvasRef.current, false);
+        this.draw(this.hiddenCanvasRef.current, true);
+
+        d3.select(this.mainCanvasRef.current).on("mousedown", (event) => {
+          const [mouseX, mouseY] = d3.pointer(event);
+          const hiddenCtx = this.hiddenCanvasRef.current.getContext("2d");
+          const col = hiddenCtx.getImageData(mouseX, mouseY, 1, 1).data;
+          const colKey = `rgb(${col[0]},${col[1]},${col[2]})`;
+          const nodeData = this.colourToNode[colKey];
+          this.selectToggle(nodeData);
+          this.draw(this.mainCanvasRef.current, false);
+          this.draw(this.hiddenCanvasRef.current, true);
+        });
+
+        d3.select(this.mainCanvasRef.current).on("mousemove", (event) => {
+          const [mouseX, mouseY] = d3.pointer(event);
+          const selectedNode = Object.values(this.data.individuals).find(node => node.selected);
+          if (selectedNode) {
+            selectedNode.x = mouseX;
+            selectedNode.y = mouseY;
+            this.draw(this.hiddenCanvasRef.current, true);
+            this.draw(this.mainCanvasRef.current, false);
+          }
+        });
+
+        d3.select(this.mainCanvasRef.current).on("mouseup", (event) => {
+          const selectedNode = Object.values(this.data.individuals).find(node => node.selected);
+          if (selectedNode) {
+            selectedNode.selected = false;
+            this.bindData(); // Update the data binding with new positions
+            this.draw(this.hiddenCanvasRef.current, true);
+            this.draw(this.mainCanvasRef.current, false);
+
+          }
+        });
+      }
+
+      selectToggle(nodeData) {
+        if (nodeData) {
+          nodeData.selected = !nodeData.selected;
+        }
+      }
+
+      bindData() {
+        const individuals = Object.values(this.data.individuals);
+        const join = custom.selectAll("custom.node").data(individuals);
+        const enterSel = join.enter()
+          .append("custom")
+          .attr("class", "node")
+          .attr("x", d => d.x)
+          .attr("y", d => d.y)
+          .attr("radius", 20)
+          .attr("fillStyle", d => d.sex === 0 ? 'white' : 'white')
+          .attr("fillStyleHidden", d => {
+            if (!d.hiddenCol) {
+              d.hiddenCol = this.genColor();
+              this.colourToNode[d.hiddenCol] = d;
+            }
+            return d.hiddenCol;
+          });
+
+        join.merge(enterSel)
+          .attr("x", d => d.x) // Update positions
+          .attr("y", d => d.y); // Update positions
+      }
+
+      draw(canvas, hidden) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const elements = custom.selectAll("custom.node");
+        elements.each(function (d) {
+          const x = d.x || node.attr("x")
+          const y = d.y || node.attr("y")
+          if(d.selected){
+          const node = d3.select(this);
+          ctx.fillStyle = hidden ? node.attr("fillStyleHidden") : node.attr("fillStyle");
+          ctx.beginPath();
+          ctx.arc(x,y, node.attr("radius"), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'black';
+          ctx.stroke();
+          ctx.fillText(d.iconText, x - 10, y + 5);
+          ctx.strokeStyle = 'yellow';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.closePath();
+          ctx.beginPath();
+          ctx.strokeRect(x - 20, y - 20, 40, 40);
+          ctx.lineWidth = 5;
+          ctx.stroke();
+          ctx.closePath();
+          } else {
+            const node = d3.select(this);
+            ctx.fillStyle = hidden ? node.attr("fillStyleHidden") : node.attr("fillStyle");
+            ctx.beginPath();
+            ctx.arc(x, y, node.attr("radius"), 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'black';
+            ctx.stroke();
+            ctx.fillText(d.iconText, x - 10, y + 5);
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.closePath();
+          }
+
+        });
+      }
+
+      render() {
+        return (
+          <div>
+            <canvas ref={this.mainCanvasRef} width="2000" height="2000" className="mainCanvas"></canvas>
+            <canvas ref={this.hiddenCanvasRef} width="2000" height="2000" className="hiddenCanvas"></canvas>
+            <div id="popup" className="popup"></div>
+          </div>
+        );
+      }
+    }
+  </script>
+</body>
+</html>

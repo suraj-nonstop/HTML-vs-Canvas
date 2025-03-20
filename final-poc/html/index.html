@@ -39,13 +39,13 @@
 		</style>
 	</head>
 	<body>
-		<h2> HTML Rendering</h2>
+		<h2>HTML Rendering</h2>
 		<button id="addNode">Add Node</button>
 		<button id="deleteNode">Delete Node</button>
 		<button id="zoomIn">Zoom In</button>
 		<button id="zoomOut">Zoom Out</button>
-    <input type="number" id="nodeCount" value="500">
-    <button id="load" >Load </button>
+		<input type="number" id="nodeCount" value="500" />
+		<button id="load">Load</button>
 		<div id="editor-container">
 			<div id="editor"></div>
 		</div>
@@ -125,40 +125,58 @@
 				}
 
 				function loadInitialNodes() {
-          // clear the container
-          container.innerHTML = "";
-          let numNodes = document.getElementById("nodeCount").value;
-          if (numNodes === "") {
-            alert("Please enter number of nodes");
-          }
-          const initialNodes = generateNodes(numNodes);
-          initialNodes.forEach((node) => addNode(node.x, node.y, node.color, node.id));
-
+					// clear the container
+					container.innerHTML = '';
+					let numNodes = document.getElementById('nodeCount').value;
+					if (numNodes === '') {
+						alert('Please enter number of nodes');
+					}
+					const initialNodes = generateNodes(numNodes);
+					initialNodes.forEach((node) =>
+						addNode(node.x, node.y, node.color, node.id)
+					);
 				}
-				
 
 				function startDrag(event) {
 					event.stopPropagation();
 					const node = event.target;
+
 					if (event.shiftKey) {
 						selectedNodes.add(node);
 					} else {
 						selectedNodes.clear();
 						selectedNodes.add(node);
 					}
+
 					isDragging = true;
-					activeNode = node;
-					dragOffset.x = event.clientX - parseFloat(node.style.left);
-					dragOffset.y = event.clientY - parseFloat(node.style.top);
-					// change the color of sleected node
+					dragOffset = new Map();
+
+					selectedNodes.forEach((node) => {
+						// Adjust offset calculation to respect zoom level
+						const rect = node.getBoundingClientRect();
+						const containerRect = container.getBoundingClientRect();
+						const offsetX = (event.clientX - rect.left) / zoomLevel;
+						const offsetY = (event.clientY - rect.top) / zoomLevel;
+						dragOffset.set(node, { x: offsetX, y: offsetY });
+					});
+
 					node.style.backgroundColor = 'yellow';
 				}
 
 				function drag(event) {
-					if (isDragging && activeNode) {
+					if (isDragging) {
 						selectedNodes.forEach((node) => {
-							node.style.left = `${event.clientX - dragOffset.x}px`;
-							node.style.top = `${event.clientY - dragOffset.y}px`;
+							const offset = dragOffset.get(node);
+							if (offset) {
+								// Calculate the correct position using zoom level
+								const containerRect = container.getBoundingClientRect();
+								node.style.left = `${
+									(event.clientX - containerRect.left) / zoomLevel - offset.x
+								}px`;
+								node.style.top = `${
+									(event.clientY - containerRect.top) / zoomLevel - offset.y
+								}px`;
+							}
 						});
 					}
 				}
@@ -211,7 +229,9 @@
 					.addEventListener('click', deleteNode);
 				document.getElementById('zoomIn').addEventListener('click', zoomIn);
 				document.getElementById('zoomOut').addEventListener('click', zoomOut);
-        document.getElementById('load').addEventListener('click', loadInitialNodes);
+				document
+					.getElementById('load')
+					.addEventListener('click', loadInitialNodes);
 
 				loadInitialNodes();
 			});

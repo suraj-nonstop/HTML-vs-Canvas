@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVG Nodes with Drag & Zoom</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    svg { width: 100vw; height: 100vh; background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <svg id="svgCanvas"></svg>
+
+  <script>
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const numNodes = 5000; // Total nodes
+    const nodeSize = 10;   // Node size
+
+    const svg = d3.select("#svgCanvas");
+    const container = svg.append("g"); // Group for panning & zooming
+
+    let isDragging = false;
+
+    // Zoom behavior
+    const zoom = d3.zoom()
+      .scaleExtent([0.1, 5])
+      .on("zoom", (event) => {
+        if (!isDragging) container.attr("transform", event.transform);
+      });
+
+    svg.call(zoom);
+
+    // Generate random positions for nodes
+    const nodes = d3.range(numNodes).map(i => ({
+      id: i,
+      x: Math.random() * width,
+      y: Math.random() * height
+    }));
+
+    // Draw nodes
+    const nodeSelection = container.selectAll("rect")
+      .data(nodes)
+      .enter()
+      .append("rect")
+      .attr("width", nodeSize)
+      .attr("height", nodeSize)
+      .attr("fill", "steelblue")
+      .attr("x", d => d.x)
+      .attr("y", d => d.y)
+      .on("mousedown", (event, d) => {
+        d3.select(event.target).attr("fill", "red");
+
+      })
+      .call(d3.drag()
+        .on("start", (event, d) => {
+         // if node is selected then only drag
+          if (d3.select(event.sourceEvent.target).attr("fill") === "red") {
+            isDragging = true;
+            d3.select(event.sourceEvent.target).attr("stroke", "black");
+          }
+          
+        })
+        .on("drag", (event, d) => {
+          if (d3.select(event.sourceEvent.target).attr("fill") === "red") {
+            d.x = event.x;
+            d.y = event.y;
+            d3.select(event.sourceEvent.target)
+              .attr("x", d.x - nodeSize / 2)
+              .attr("y", d.y - nodeSize / 2);
+          }
+        })
+        .on("end", (event) => {
+          isDragging = false;
+          d3.select(event.sourceEvent.target).attr("stroke", null);
+        })
+      );
+
+    // Ensure mouseup works globally
+    d3.select(window).on("mouseup", () => {
+      isDragging = false;
+    });
+
+  </script>
+</body>
+</html>

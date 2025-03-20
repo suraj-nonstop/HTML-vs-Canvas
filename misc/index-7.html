@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Custom D3 Symbol on Canvas</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+  <canvas id="canvas" width="2000" height="2000"></canvas>
+  <script>
+    const canvas = document.getElementById("canvas");
+    const context = canvas.getContext("2d");
+   // draw a custom symbol
+    const symbol = d3.symbol().type(d3.symbolStar).size(10000);
+    // context.beginPath();
+    // context.translate(100, 100);
+    // symbol.context(context)();
+    // context.fill();
+    // context.closePath();
+
+    // d3 drag and drop symbol on canvas 
+
+    const drag = d3.drag()
+      .on("start", dragstarted)
+      .on("drag", dragged)
+      .on("end", dragended);
+
+    const g = d3.select(canvas)
+      .call(drag)
+      .append("g")
+      .attr("transform", "translate(200, 200)");
+
+    g.append("path")
+      .attr("d", symbol)
+      .attr("fill", "red");
+
+    function dragstarted(event) {
+      d3.select(this).raise().attr("stroke", "black");
+    }
+
+    function dragged(event) {
+      d3.select(this).attr("cx", event.x).attr("cy", event.y);
+      d3.select(this).attr("transform", `translate(${event.x}, ${event.y})`);
+    }
+
+    function dragended(event) {
+      d3.select(this).attr("stroke", null);
+    }
+
+
+    context.beginPath();
+    context.translate(100, 100);
+    symbol.context(context)();
+    context.fill();
+    context.closePath();
+        
+
+  </script>
+</body>
+</html>

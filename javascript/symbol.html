@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>SVG Symbols on Canvas</title>
+	</head>
+	<body>
+		<canvas
+			id="canvas"
+			width="800"
+			height="600"
+			style="border: 1px solid #000"></canvas>
+
+		<script>
+			const canvas = document.getElementById('canvas');
+			const ctx = canvas.getContext('2d');
+
+			// JSON input
+			const symbolsData = [
+      {
+					x: 1,
+					y: 100,
+					symbol: 'male-0',
+					colors: ['#FF0000' ],
+					label: 'Male 0',
+				},
+				{
+					x: 100,
+					y: 100,
+					symbol: 'male-1',
+					colors: ['#FF0000', '#F3789B'],
+					label: 'Male 1',
+				},
+        {
+					x: 200,
+					y: 100,
+					symbol: 'male-2',
+					colors: ['#FF0000', '#F8CCA6'],
+					label: 'Male 2',
+				},
+        {
+					x: 300,
+					y: 100,
+					symbol: 'male-3',
+					colors: ['#FF0000', '#086146'],
+					label: 'Male 3',
+				},
+        {
+					x: 400,
+					y: 100,
+					symbol: 'male-4',
+					colors: ['#FF0000', '#3DB7E4'],
+					label: 'Male 4',
+				},
+        {
+					x: 1,
+					y: 200,
+					symbol: 'female-0',
+					colors: ['#000000'],
+					label: 'Female 0',
+				},
+				{
+					x: 100,
+					y: 200,
+					symbol: 'female-1',
+					colors: ['#000000', '#F3789B'],
+					label: 'Female 1',
+				},
+        {
+					x: 200,
+					y: 200,
+					symbol: 'female-2',
+					colors: ['#000000', '#F8CCA6'],
+					label: 'Female 2',
+				},
+        {
+					x: 300,
+					y: 200,
+					symbol: 'female-3',
+					colors: ['#000000', '#086146'],
+					label: 'Female 3',
+				},
+        {
+					x: 400,
+					y: 200,
+					symbol: 'female-4',
+					colors: ['#000000', '#3DB7E4'],
+					label: 'Female 4',
+				},
+			];
+			let selectedSymbol = null;
+			// Load and draw symbols
+			function loadSVG(symbolName, colors, x, y, label) {
+				fetch(`symbols/${symbolName}.svg`)
+					.then((response) => response.text())
+					.then((svgString) => {
+						let parser = new DOMParser();
+						let xmlDoc = parser.parseFromString(svgString, 'image/svg+xml');
+
+						// Change stroke color
+						let strokeElement = xmlDoc.getElementById('stroke');
+						if (strokeElement) strokeElement.setAttribute('stroke', colors[0]);
+
+						// Change fill colors based on unique IDs
+						for (let i = 1; i <= 4; i++) {
+							let fillElement = xmlDoc.getElementById(`fill-${i}`);
+							if (fillElement) fillElement.setAttribute('fill', colors[i]);
+						}
+
+						// Convert modified SVG back to a string
+						let modifiedSVG = new XMLSerializer().serializeToString(xmlDoc);
+
+						// Convert SVG to an Image
+						const img = new Image();
+						const svgBlob = new Blob([modifiedSVG], { type: 'image/svg+xml' });
+						const url = URL.createObjectURL(svgBlob);
+
+						img.onload = function () {
+							ctx.drawImage(img, x, y, 50, 50); // Draw symbol
+
+							// onclick event for each symbol
+							canvas.addEventListener('click', function (event) {
+								console.log('Deselecting symbol');
+								if ((selectedSymbol!=null && selectedSymbol.label == label)) {
+									
+									ctx.clearRect(selectedSymbol.x, selectedSymbol.y, 50, 50);
+									selectedSymbol = null;
+									return;
+								} 
+								selectedSymbol = {
+									colors: colors,
+									symbolName: symbolName,
+									label: label,
+									x: x,
+									y: y,
+								};
+								const rect = canvas.getBoundingClientRect();
+								const mouseX = event.clientX - rect.left;
+								const mouseY = event.clientY - rect.top;
+								// change the stroke color of the symbol
+								if (
+									mouseX >= x &&
+									mouseX <= x + 50 &&
+									mouseY >= y &&
+									mouseY <= y + 50
+								) {
+									// Draw a border around the selected symbol
+									ctx.strokeStyle = 'blue';
+									ctx.lineWidth = 2;
+									ctx.strokeRect(x, y, 50, 50);	
+									// store reference to the selected symbol for future use
+									
+								}
+							
+							});
+							// Draw label
+							ctx.font = '14px Arial';
+							ctx.fillStyle = 'black';
+							ctx.textAlign = 'center';
+							ctx.fillText(label, x + 25, y + 65);
+							// hidden id for each symbol
+							
+							
+						
+
+							URL.revokeObjectURL(url);
+						};
+						img.src = url;
+					})
+					.catch((error) => console.error('Error loading SVG:', error));
+			}
+			// Process JSON input
+			symbolsData.forEach((data) => {
+				loadSVG(data.symbol, data.colors, data.x, data.y, data.label);
+			});
+		</script>
+	</body>
+</html>

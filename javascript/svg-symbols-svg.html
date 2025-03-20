@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SVG Symbols</title>
+    <style>
+        #svgContainer {
+            width: 800px;
+            height: 600px;
+            border: 1px solid black;
+        }
+        .symbol {
+            cursor: pointer;
+        }
+        .selected {
+            stroke: blue !important;
+            stroke-width: 2px !important;
+        }
+    </style>
+</head>
+<body>
+
+    <svg id="svgContainer" xmlns="http://www.w3.org/2000/svg"></svg>
+
+    <script>
+        const svgContainer = document.getElementById("svgContainer");
+        let selectedSymbol = null;
+
+        const symbolsData = [
+            { x: 10, y: 100, symbol: "male-0", colors: ["#FF0000"], label: "Male 0" },
+            { x: 110, y: 100, symbol: "male-1", colors: ["#FF0000", "#F3789B"], label: "Male 1" },
+            { x: 210, y: 100, symbol: "male-2", colors: ["#FF0000", "#F8CCA6"], label: "Male 2" },
+            { x: 310, y: 100, symbol: "male-3", colors: ["#FF0000", "#086146"], label: "Male 3" },
+            { x: 410, y: 100, symbol: "male-4", colors: ["#FF0000", "#3DB7E4"], label: "Male 4" },
+            { x: 10, y: 200, symbol: "female-0", colors: ["#000000"], label: "Female 0" },
+            { x: 110, y: 200, symbol: "female-1", colors: ["#000000", "#F3789B"], label: "Female 1" },
+            { x: 210, y: 200, symbol: "female-2", colors: ["#000000", "#F8CCA6"], label: "Female 2" },
+            { x: 310, y: 200, symbol: "female-3", colors: ["#000000", "#086146"], label: "Female 3" },
+            { x: 410, y: 200, symbol: "female-4", colors: ["#000000", "#3DB7E4"], label: "Female 4" }
+        ];
+
+        function loadSVG(symbolName, colors, x, y, label) {
+            fetch(`symbols/${symbolName}.svg`)
+                .then(response => response.text())
+                .then(svgString => {
+                    let parser = new DOMParser();
+                    let xmlDoc = parser.parseFromString(svgString, "image/svg+xml");
+
+                    // Modify stroke color
+                    let strokeElement = xmlDoc.getElementById("stroke");
+                    if (strokeElement) strokeElement.setAttribute("stroke", colors[0]);
+
+                    // Modify fill colors
+                    for (let i = 1; i <= 4; i++) {
+                        let fillElement = xmlDoc.getElementById(`fill-${i}`);
+                        if (fillElement && colors[i]) {
+                            fillElement.setAttribute("fill", colors[i]);
+                        }
+                    }
+
+                    // Convert SVG to inline element
+                    let symbolElement = xmlDoc.documentElement;
+                    symbolElement.setAttribute("x", x);
+                    symbolElement.setAttribute("y", y);
+                    symbolElement.setAttribute("width", "50");
+                    symbolElement.setAttribute("height", "50");
+                    symbolElement.classList.add("symbol");
+
+                    // Click event for selection
+                    symbolElement.addEventListener("click", function () {
+                        if (selectedSymbol) {
+                            selectedSymbol.classList.remove("selected");
+                        }
+                        if (selectedSymbol !== this) {
+                            this.classList.add("selected");
+                            selectedSymbol = this;
+                        } else {
+                            selectedSymbol = null;
+                        }
+                    });
+
+                    // Add label below symbol
+                    let textElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    textElement.setAttribute("x", x + 25);
+                    textElement.setAttribute("y", y + 65);
+                    textElement.setAttribute("text-anchor", "middle");
+                    textElement.setAttribute("font-size", "14");
+                    textElement.textContent = label;
+
+                    // Append to SVG container
+                    svgContainer.appendChild(symbolElement);
+                    svgContainer.appendChild(textElement);
+                })
+                .catch(error => console.error("Error loading SVG:", error));
+        }
+
+        // Load all symbols
+        symbolsData.forEach(data => {
+            loadSVG(data.symbol, data.colors, data.x, data.y, data.label);
+        });
+
+    </script>
+
+</body>
+</html>

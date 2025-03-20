@@ -14,7 +14,10 @@
 <body>
   <h1>Render 5000 nodes on HTML </h1>
     <script >
-      for (let i = 0; i < 5000; i++) {
+ 
+
+
+for (let i = 0; i < data.length; i++) {
   const div = document.createElement('div');
   div.id = `draggable-${i}`;
   div.className = 'draggable';
@@ -22,17 +25,12 @@
   div.style.height = '50px';
   div.style.backgroundColor = 'lightblue';
   div.style.position = 'absolute';
-
-  // get full width of body 
-  // get full height of body
-
-
-  div.style.left = `${Math.random() * document.body.scrollWidth}px`;
-  div.style.top = `${Math.random() * document.body.scrollHeight}px`;
+  div.style.left = `${data[i].x}px`;
+  div.style.top = `${data[i].y}px`;
   div.style.cursor = 'move';
   document.body.appendChild(div);
 }
-
+// console.log(data);
 // Variables to store the offset of the mouse during the drag
 let offsetX, offsetY, isDragging = false, currentDraggable = null;
 

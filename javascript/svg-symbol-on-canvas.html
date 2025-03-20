@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiple SVGs to Canvas</title>
+</head>
+<body>
+    <h2>Draw Multiple SVGs on Canvas with Custom Color</h2>
+
+    <!-- Color Picker -->
+    <label for="colorPicker">Choose Color:</label>
+    <input type="color" id="colorPicker" value="#FF5733">
+
+    <!-- Button to Load SVGs -->
+    <button onclick="loadAndDrawSVGs()">Load Symbols</button>
+
+    <!-- Canvas to Draw SVGs -->
+    <canvas id="myCanvas" width="600" height="600" style="border:1px solid black;"></canvas>
+
+    <script>
+        const svgFiles = ["symbol1.svg" , "symbol2.svg"  , "symbol3.svg" ]; // List of SVG files in "symbols/" folder
+        const folderPath = "symbols/"; // Path to the folder
+
+        async function loadAndDrawSVGs() {
+            const canvas = document.getElementById("myCanvas");
+            const ctx = canvas.getContext("2d");
+            const colorPicker = document.getElementById("colorPicker").value;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+            let x = 10, y = 10; // Initial position for drawing
+
+            for (const fileName of svgFiles) {
+                const svgPath = folderPath + fileName;
+
+                try {
+                    const response = await fetch(svgPath);
+                    if (!response.ok) {
+                        console.error(`Failed to load ${fileName}`);
+                        continue;
+                    }
+
+                    let svgText = await response.text();
+
+                    // Parse SVG XML
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(svgText, "image/svg+xml");
+
+                    // Modify fill and stroke color
+                    const elements = xmlDoc.querySelectorAll("[fill], [stroke]");
+                    elements.forEach(el => {
+                        if (el.getAttribute("fill") !== "none" && el.getAttribute("fill") !== "white") {
+                            el.setAttribute("fill", colorPicker);
+                        }
+                        if (el.getAttribute("stroke") !== "none" && el.getAttribute("stroke") !== "black") {
+                            el.setAttribute("stroke", colorPicker);
+                        }
+                    });
+
+                    // Convert modified SVG to a Blob URL
+                    const serializer = new XMLSerializer();
+                    const modifiedSVG = serializer.serializeToString(xmlDoc.documentElement);
+                    const blob = new Blob([modifiedSVG], { type: "image/svg+xml" });
+                    const url = URL.createObjectURL(blob);
+
+                    // Draw on canvas
+                    const img = new Image();
+                    img.onload = function () {
+                        ctx.drawImage(img, x, y, 100, 100); // Adjust size & position
+                        URL.revokeObjectURL(url); // Cleanup
+
+                        // Update position for the next SVG
+                        x += 120; 
+                        if (x + 100 > canvas.width) {
+                            x = 10;
+                            y += 120;
+                        }
+                    };
+                    img.src = url;
+
+                } catch (error) {
+                    console.error("Error loading SVG:", error);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

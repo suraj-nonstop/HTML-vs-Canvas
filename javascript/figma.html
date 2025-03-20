@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Nodes with Drag Drop , ZOOM , Connect , Add Node, Remove Node</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        canvas { border: 1px solid black; cursor: pointer; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h2>Canvas Nodes App</h2>
+    <button onclick="addNode()">Add Node</button>
+    <button onclick="deleteNode()">Delete Node</button>
+    <button onclick="zoomIn()">Zoom In</button>
+    <button onclick="zoomOut()">Zoom Out</button>
+    <button onclick="undo()">Undo</button>
+    <button onclick="redo()">Redo</button>
+    <button onclick="connectNodes()">Connect Nodes</button>
+    <br>
+    <canvas id="canvas" width="2160" height="1000"></canvas>
+
+    <script src="script.js"></script>
+</body>
+</html>

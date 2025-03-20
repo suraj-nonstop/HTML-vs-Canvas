@@ -38,7 +38,7 @@
         data.individuals[i] = { 
           "iconText": "N-"+i,
           "sex": i % 2 === 0 ? 0 : 1,
-          "x": Math.random() * 2000,
+          "x": Math.random() * 10000,
           "y": Math.random() * 2000
         };
       }
@@ -161,7 +161,7 @@
       }
 
       draw(canvas, hidden) {
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d',{ willReadFrequently: true });
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         const elements = custom.selectAll("custom.node");
@@ -207,8 +207,8 @@
       render() {
         return (
           <div>
-            <canvas ref={this.mainCanvasRef} width="2000" height="2000" className="mainCanvas"></canvas>
-            <canvas ref={this.hiddenCanvasRef} width="2000" height="2000" className="hiddenCanvas"></canvas>
+            <canvas ref={this.mainCanvasRef} width="10000" height="2000" className="mainCanvas"></canvas>
+            <canvas ref={this.hiddenCanvasRef} width="10000" height="2000" className="hiddenCanvas"></canvas>
             <div id="popup" className="popup"></div>
           </div>
         );

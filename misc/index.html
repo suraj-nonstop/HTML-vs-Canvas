@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pedigree Chart</title>
+</head>
+<body>
+  <h1>Pedigree Chart with D3.js</h1>
+  <!-- <div id="pedigreeChart"></div> -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+
+  <!-- <script src="./dist/pedigree-chart.js"></script> -->
+  <script>
+    // const data = [
+    //   { id: 1, name: "John Doe", x: 100, y: 100 },
+    //   { id: 2, name: "Jane Doe", x: 300, y: 100 },
+    //   { id: 3, name: "Michael Doe", x: 200, y: 300 }
+    // ];
+
+    // const chart = new PedigreeChart('#pedigreeChart', data);
+    // chart.draw();
+
+    const params = { width: 800, height: 600 };
+
+// Initialize SVG canvas
+const svg = d3.select('body')
+  .append('svg')
+  .attr('width', params.width)
+  .attr('height', params.height);
+
+const g = svg.append('g')
+  .attr('transform', `translate(${params.width / 2}, ${params.height / 2})`);
+
+// Circle data generation
+const radius = 20;
+const circleData = d3.range(50).map(() => ({
+  x: Math.round(Math.random() * (params.width - radius * 2) + radius - params.width * 0.5),
+  y: Math.round(Math.random() * (params.height - radius * 2) + radius - params.height * 0.5)
+}));
+
+// Append circles
+const circles = g.append('g')
+  .attr('class', 'circles')
+  .selectAll('circle')
+  .data(circleData)
+  .enter()
+  .append('circle')
+  .attr('cx', d => d.x)
+  .attr('cy', d => d.y)
+  .attr('r', radius)
+  .attr('fill', 'white')
+  .attr('stroke', 'black')
+  
+
+
+// Drag behavior
+let startX, startY, currentScale = 1;
+
+const dragHandler = d3.drag()
+  .on('start', function (event) {
+    startX = event.x;
+    startY = event.y;
+  })
+  .on('drag', function (event, d) {
+    let transform = this.getAttribute('transform');
+    currentScale = transform ? +transform.split(' ')[1]?.slice(6, -1) || 1 : 1;
+    d3.select(this)
+      .attr('cx', d.x = startX + (event.x - startX) / currentScale)
+      .attr('cy', d.y = startY + (event.y - startY) / currentScale);
+  });
+
+dragHandler(circles);
+
+// Zoom behavior
+const zoomHandler = d3.zoom()
+  .on('zoom', () => {
+    g.attr('transform', d3.event.transform);
+  });
+
+svg.call(zoomHandler);
+
+// Animation loop
+const timer = d3.timer(() => {});
+
+// Stop timer on unload
+window.addEventListener('beforeunload', () => timer.stop());
+
+  </script>
+</body>
+</html>

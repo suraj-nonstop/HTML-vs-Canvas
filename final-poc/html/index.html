@@ -11,8 +11,8 @@
 			}
 			#editor-container {
 				border: 1px solid black;
-				width: 100vw;
-				height: 100vh;
+				width: calc(100vw - 100px);
+				height: calc(100vh - 150px);
 				position: relative;
 				overflow: hidden;
 				margin: auto;
@@ -30,6 +30,7 @@
 				position: absolute;
 				cursor: grab;
 				border-radius: 50%;
+				border: 1px solid black;
 			}
 			button {
 				margin: 5px;
@@ -64,7 +65,7 @@
 
 				function generateNodes(numNodes) {
 					const numColumns = Math.ceil(Math.sqrt(numNodes)); // Create a square-like grid
-					const spacing = 50; // Space between nodes
+					const spacing = 100; // Space between nodes
 					const colors = [
 						'#FF0000',
 						'#00FF00',

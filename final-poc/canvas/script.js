@@ -2,8 +2,8 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 // get full screen size
-canvas.width = 2160;
-canvas.height = 1000;
+canvas.width = window.innerWidth - 100;
+canvas.height = window.innerHeight - 140;
 
 // Node and connection storage
 let nodes = [];
@@ -128,7 +128,7 @@ function addNode() {
         id: Date.now(),
         x: Math.random() * 600 + 50,
         y: Math.random() * 400 + 50,
-        radius: 30,
+        radius: 25,
         color: "green"
     };
     nodes.push(newNode);
@@ -266,6 +266,17 @@ function redo() {
     }
 }
 
+// pan the canvas by pressing space bar and dragging
+
+canvas.addEventListener("keydown", (event) => {
+    if (event.code === "Space") {
+        isDragging = true;
+        canvas.style.cursor = "grab";
+    }
+});
+
+
+// canvas.addEventListener("keydown", (event) => {
 // Mouse wheel zoom
 // canvas.addEventListener("wheel", (event) => {
 //     zoomLevel *= event.deltaY > 0 ? 0.9 : 1.1;
@@ -275,7 +286,7 @@ function redo() {
 
 function generateNodes(numNodes) {
     const numColumns = Math.ceil(Math.sqrt(numNodes)); // Create a square-like grid
-    const spacing = 50; // Space between nodes
+    const spacing = 100; // Space between nodes
     const colors = [
         "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF",
         "#800000", "#808000", "#008000", "#800080", "#808080", "#008080"
@@ -291,7 +302,7 @@ function generateNodes(numNodes) {
             id: i + 1,
             x: col * spacing + 50,
             y: row * spacing + 50,
-            radius: 30,
+            radius: 25,
             color: colors[i % colors.length]
         });
     }
@@ -299,6 +310,5 @@ function generateNodes(numNodes) {
     return nodes;
 }
 // Load initial data
-//loadState(JSON.stringify({ nodes: initialData, connections: [] }));
 loadData();
 

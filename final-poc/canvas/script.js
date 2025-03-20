@@ -20,50 +20,53 @@ let undoStack = [];
 let redoStack = [];
 
 // load json data form file 
-let initialData = [
-    {
-        "id": 1,
-        "x": 50,
-        "y": 50,
-        "radius": 30,
-        "color": "#FF0000"
-    },
-    {
-        "id": 2,
-        "x": 85,
-        "y": 90,
-        "radius": 30,
-        "color": "#0000FF"
-    },
-    {
-        "id": 3,
-        "x": 120,
-        "y": 130,
-        "radius": 30,
-        "color": "#00FF00"
-    },
-    {
-        "id": 4,
-        "x": 155,
-        "y": 170,
-        "radius": 30,
-        "color": "#FFFF00"
-    },
-    {
-        "id": 5,
-        "x": 190,
-        "y": 210,
-        "radius": 30,
-        "color": "#FF00FF"
-    }
-];
-// fetch('/data/data.json')
-//     .then(response => response.json())
-//     .then(data => {
-//         initialData = data;
-//         loadState(JSON.stringify({ nodes: initialData, connections: [] }));
+// let initialData = [
+//     {
+//         "id": 1,
+//         "x": 50,
+//         "y": 50,
+//         "radius": 30,
+//         "color": "#FF0000"
+//     },
+//     {
+//         "id": 2,
+//         "x": 85,
+//         "y": 90,
+//         "radius": 30,
+//         "color": "#0000FF"
+//     },
+//     {
+//         "id": 3,
+//         "x": 120,
+//         "y": 130,
+//         "radius": 30,
+//         "color": "#00FF00"
+//     },
+//     {
+//         "id": 4,
+//         "x": 155,
+//         "y": 170,
+//         "radius": 30,
+//         "color": "#FFFF00"
+//     },
+//     {
+//         "id": 5,
+//         "x": 190,
+//         "y": 210,
+//         "radius": 30,
+//         "color": "#FF00FF"
+//     }
+// ];
 
-//     });
+function loadData() {
+     let numNodes = document.getElementById("nodeCount").value;
+    if (numNodes === "") {
+       alert("Please enter number of nodes");
+    }
+    const nodes = generateNodes(numNodes);
+    loadState(JSON.stringify({ nodes, connections: [] }));
+}
+
 
 function saveState() {
     redoStack = []; // Clear redo on new action
@@ -87,12 +90,15 @@ function redraw() {
     ctx.scale(zoomLevel, zoomLevel);
 
     // Draw connections
+    // connections.forEach(({ from, to }) => {
+    //     ctx.beginPath();
+    //     ctx.moveTo(from.x, from.y);
+    //     ctx.lineTo(to.x, to.y);
+    //     ctx.strokeStyle = "black";
+    //     ctx.stroke();
+    // });
     connections.forEach(({ from, to }) => {
-        ctx.beginPath();
-        ctx.moveTo(from.x, from.y);
-        ctx.lineTo(to.x, to.y);
-        ctx.strokeStyle = "black";
-        ctx.stroke();
+        drawElbowLine(from.x, from.y, to.x, to.y);
     });
 
     // Draw nodes
@@ -219,6 +225,21 @@ function connectNodes() {
     }
 }
 
+function drawElbowLine(x1, y1, x2, y2) {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+
+    let midX = x1 + (x2 - x1) / 2;
+    let midY = y2;
+
+    ctx.lineTo(midX, y1);  // Horizontal segment
+    ctx.lineTo(midX, midY); // Vertical segment
+    ctx.lineTo(x2, y2);  // Horizontal segment to target
+
+    ctx.strokeStyle = "black";
+    ctx.stroke();
+}
+
 // Zoom functions
 function zoomIn() {
     zoomLevel = Math.min(zoomLevel * 1.1, 3);
@@ -226,7 +247,7 @@ function zoomIn() {
 }
 
 function zoomOut() {
-    zoomLevel = Math.max(zoomLevel / 1.1, 0.5);
+    zoomLevel = Math.max(zoomLevel / 1.1, 0.2);
     redraw();
 }
 
@@ -246,12 +267,38 @@ function redo() {
 }
 
 // Mouse wheel zoom
-canvas.addEventListener("wheel", (event) => {
-    zoomLevel *= event.deltaY > 0 ? 0.9 : 1.1;
-    zoomLevel = Math.min(Math.max(zoomLevel, 0.5), 3);
-    redraw();
-});
+// canvas.addEventListener("wheel", (event) => {
+//     zoomLevel *= event.deltaY > 0 ? 0.9 : 1.1;
+//     zoomLevel = Math.min(Math.max(zoomLevel, 0.5), 3);
+//     redraw();
+// });
 
+function generateNodes(numNodes) {
+    const numColumns = Math.ceil(Math.sqrt(numNodes)); // Create a square-like grid
+    const spacing = 50; // Space between nodes
+    const colors = [
+        "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF",
+        "#800000", "#808000", "#008000", "#800080", "#808080", "#008080"
+    ];
+
+    const nodes = [];
+
+    for (let i = 0; i < numNodes; i++) {
+        const row = Math.floor(i / numColumns);
+        const col = i % numColumns;
+
+        nodes.push({
+            id: i + 1,
+            x: col * spacing + 50,
+            y: row * spacing + 50,
+            radius: 30,
+            color: colors[i % colors.length]
+        });
+    }
+
+    return nodes;
+}
 // Load initial data
-loadState(JSON.stringify({ nodes: initialData, connections: [] }));
+//loadState(JSON.stringify({ nodes: initialData, connections: [] }));
+loadData();
 

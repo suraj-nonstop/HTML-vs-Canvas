@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>HTML Rendering</title>
+		<style>
+			body {
+				text-align: center;
+				font-family: Arial, sans-serif;
+			}
+			#editor-container {
+				border: 1px solid black;
+				width: calc(100vw - 100px);
+				height: calc(100vh - 150px);
+				position: relative;
+				overflow: hidden;
+				margin: auto;
+			}
+			#editor {
+				position: absolute;
+				width: 100%;
+				height: 100%;
+				transform-origin: top left;
+			}
+			.node {
+				width: 50px;
+				height: 50px;
+				background: red;
+				position: absolute;
+				cursor: grab;
+				border-radius: 50%;
+				border: 1px solid black;
+			}
+			.line { position: absolute; background: black; height: 2px; transform-origin: 0 0; }
+			button {
+				margin: 5px;
+				padding: 10px;
+			}
+		</style>
+	</head>
+	<body>
+		<h2>HTML Rendering</h2>
+		<button id="addNode">Add Node</button>
+		<button id="deleteNode">Delete Node</button>
+		<button id="zoomIn">Zoom In</button>
+		<button id="zoomOut">Zoom Out</button>
+		<button id="connectNodes">Connect Nodes</button>
+
+		<input type="number" id="nodeCount" value="500" />
+		<button id="load">Load</button>
+		<div id="editor-container">
+			<div id="editor"></div>
+		</div>
+
+		<script>
+			document.addEventListener('DOMContentLoaded', () => {
+				const container = document.getElementById('editor');
+				const colorPicker = document.getElementById('colorPicker');
+				let nodes = [];
+				let selectedNodes = new Set();
+				let isDragging = false;
+				let dragOffset = { x: 0, y: 0 };
+				let activeNode = null;
+				let zoomLevel = 1;
+				let connections = [];
+
+
+				// import initial data from /data/data.json
+
+				function generateNodes(numNodes) {
+					const numColumns = Math.ceil(Math.sqrt(numNodes)); // Create a square-like grid
+					const spacing = 100; // Space between nodes
+					const colors = [
+						'#FF0000',
+						'#00FF00',
+						'#0000FF',
+						'#FFFF00',
+						'#FF00FF',
+						'#00FFFF',
+						'#800000',
+						'#808000',
+						'#008000',
+						'#800080',
+						'#808080',
+						'#008080',
+					];
+
+					const nodes = [];
+
+					for (let i = 0; i < numNodes; i++) {
+						const row = Math.floor(i / numColumns);
+						const col = i % numColumns;
+
+						nodes.push({
+							id: i + 1,
+							x: col * spacing + 50,
+							y: row * spacing + 50,
+							radius: 30,
+							color: colors[i % colors.length],
+						});
+					}
+
+					return nodes;
+				}
+
+				function addNode(
+					x = Math.random() * 400,
+					y = Math.random() * 300,
+					color = 'red',
+					id = Date.now()
+				) {
+					const node = document.createElement('div');
+					node.classList.add('node');
+					node.style.left = `${x}px`;
+					node.style.top = `${y}px`;
+					node.style.backgroundColor = color;
+					node.dataset.id = id;
+					container.appendChild(node);
+					nodes.push({ id, x, y, color });
+					// set data attributes for the node
+					node.setAttribute('data-color', color);
+					node.addEventListener('mousedown', startDrag);
+					node.addEventListener('mouseup', () => {
+						// get the color of the node
+						const color = node.getAttribute('data-color');
+						// set the color of the color picker
+						node.style.backgroundColor = color;
+					});
+				}
+
+				function loadInitialNodes() {
+					// clear the container
+					container.innerHTML = '';
+					let numNodes = document.getElementById('nodeCount').value;
+					if (numNodes === '') {
+						alert('Please enter number of nodes');
+					}
+					const initialNodes = generateNodes(numNodes);
+					initialNodes.forEach((node) =>
+						addNode(node.x, node.y, node.color, node.id)
+					);
+				}
+
+				function startDrag(event) {
+					event.stopPropagation();
+					const node = event.target;
+					
+					if (event.shiftKey) {
+						selectedNodes.add(node);
+					} else {	
+						selectedNodes.clear();
+						selectedNodes.add(node);
+					}
+
+					isDragging = true;
+					dragOffset = new Map();
+
+					selectedNodes.forEach((node) => {
+						// Adjust offset calculation to respect zoom level
+						const rect = node.getBoundingClientRect();
+						const containerRect = container.getBoundingClientRect();
+						const offsetX = (event.clientX - rect.left) / zoomLevel;
+						const offsetY = (event.clientY - rect.top) / zoomLevel;
+						dragOffset.set(node, { x: offsetX, y: offsetY });
+					});
+
+					node.style.backgroundColor = 'yellow';
+				}
+
+				function drag(event) {
+					if (isDragging) {
+						selectedNodes.forEach((node) => {
+							const offset = dragOffset.get(node);
+							if (offset) {
+								// Calculate the correct position using zoom level
+								const containerRect = container.getBoundingClientRect();
+								node.style.left = `${
+									(event.clientX - containerRect.left) / zoomLevel - offset.x
+								}px`;
+								node.style.top = `${
+									(event.clientY - containerRect.top) / zoomLevel - offset.y
+								}px`;
+							}
+						});
+						updateConnections();
+					}
+				}
+
+				function stopDrag() {
+					isDragging = false;
+				}
+
+				function deleteNode() {
+					selectedNodes.forEach((node) => {
+						nodes = nodes.filter((n) => n.id != node.dataset.id);
+						container.removeChild(node);
+					});
+					selectedNodes.clear();
+					updateConnections();
+				}
+
+				function zoomIn() {
+					zoomLevel = Math.min(zoomLevel * 1.1, 3);
+					container.style.transform = `scale(${zoomLevel})`;
+				}
+
+				function zoomOut() {
+					zoomLevel = Math.max(zoomLevel / 1.1, 0.5);
+					container.style.transform = `scale(${zoomLevel})`;
+				}
+
+				function changeNodeColor(event) {
+					const newColor = event.target.value;
+					selectedNodes.forEach((node) => {
+						node.style.backgroundColor = newColor;
+					});
+				}
+
+				function rgbToHex(rgb) {
+					const rgbValues = rgb.match(/\d+/g);
+					if (!rgbValues) return '#ff0000';
+					return `#${rgbValues
+						.map((val) => Number(val).toString(16).padStart(2, '0'))
+						.join('')}`;
+				}
+
+				function connectNodes() {
+							console.log("connectNodes");
+							console.log(selectedNodes);
+                if (selectedNodes.size === 2) {
+                    let [fromNode, toNode] = Array.from(selectedNodes);
+                    const line = document.createElement("div");
+                    line.classList.add("line");
+                    container.appendChild(line);
+                    connections.push({ from: fromNode, to: toNode, element: line });
+                    updateConnections();
+                }
+        }
+
+				function updateConnections() {
+                connections.forEach(({ from, to, element }) => {
+                    const x1 = parseFloat(from.style.left) + 25;
+                    const y1 = parseFloat(from.style.top) + 25;
+                    const x2 = parseFloat(to.style.left) + 25;
+                    const y2 = parseFloat(to.style.top) + 25;
+                    const dx = x2 - x1;
+                    const dy = y2 - y1;
+                    const length = Math.sqrt(dx * dx + dy * dy);
+                    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+                    element.style.width = `${length}px`;
+                    element.style.left = `${x1}px`;
+                    element.style.top = `${y1}px`;
+                    element.style.transform = `rotate(${angle}deg)`;
+                });
+            }
+				
+						function selectNode(event) {
+							console.log("selectNode");
+                const node = event.target;
+                if (selectedNodes.has(node)) {
+                    selectedNodes.delete(node);
+                } else {
+                    selectedNodes.add(node);
+                }
+            }
+				document.addEventListener('mousemove', drag);
+				document.addEventListener('mouseup', stopDrag);
+
+				document
+					.getElementById('addNode')
+					.addEventListener('click', () => addNode());
+				document
+					.getElementById('deleteNode')
+					.addEventListener('click', deleteNode);
+				document.getElementById('zoomIn').addEventListener('click', zoomIn);
+				document.getElementById('zoomOut').addEventListener('click', zoomOut);
+				document.getElementById("connectNodes").addEventListener("click", connectNodes);
+
+				document
+					.getElementById('load')
+					.addEventListener('click', loadInitialNodes);
+
+				loadInitialNodes();
+			});
+		</script>
+	</body>
+</html>
